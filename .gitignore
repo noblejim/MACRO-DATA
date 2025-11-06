@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Outputs and artifacts
+out/
+dashboards/*.xlsx
+
+# Local caches
+data/us/.cache_fred/
+data/us/.cache_fmp/
+data/kr/.cache_fred/
+
+# Logs
+*.log
+out/**/logs/

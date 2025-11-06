@@ -1,0 +1,27 @@
+name: nightly
+
+on:
+  schedule:
+    # 02:00 KST daily = 17:00 UTC (previous day)
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify environment
+        run: |
+          python -V
+          pip -V
+          echo "Repo ready. Add secrets (FMP_API_KEY, FRED_API_KEY, optional BOK_API_KEY/KOSIS_API_KEY) and pipeline files in follow-up PR."
