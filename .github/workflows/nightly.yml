@@ -2,8 +2,7 @@ name: nightly
 
 on:
   schedule:
-    # 02:00 KST daily = 17:00 UTC (previous day)
-    - cron: "0 17 * * *"
+    - cron: "0 17 * * *" # 02:00 KST
   workflow_dispatch:
 
 permissions:
@@ -24,16 +23,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install dependencies
         run: |
           pip install -q pandas numpy xlsxwriter finance-datareader
-
       - name: Restore caches (US)
         uses: actions/cache@v4
         with:
@@ -43,46 +39,36 @@ jobs:
           key: cache-us-${{ runner.os }}-${{ hashFiles('scripts/**/*.py','data/us/macro_sources.csv') }}
           restore-keys: |
             cache-us-${{ runner.os }}-
-
       - name: Prepare folders
         run: |
           mkdir -p out/us/logs dashboards
-
       - name: Seed/Backfill events (FRED)
         run: |
           python scripts/backfill_events_from_fred.py --data-dir data/us --all-fred --start 2000-01-01 --fred-key "$FRED_API_KEY" || true
-
       - name: Fetch prices (FMP)
         run: |
           python scripts/fetch_prices_fmp.py --data-dir data/us --start 2000-01-01 --slice-years
-
       - name: Fill US macro actuals (FRED)
         run: |
           python scripts/fetch_macro_from_fred.py --data-dir data/us --fred-key "$FRED_API_KEY"
-
       - name: Merge macro actuals
         run: |
           python scripts/merge_macro_actuals.py --data-dir data/us --backup
-
       - name: Build reaction matrices
         run: |
           python scripts/build_reaction_matrix.py --market us --data-dir data/us --out-dir out/us --sector-benchmark-csv data/us/sector_benchmarks.csv --write-wide --win1 1 --win3 3 --compute-cycles --cycle-windows 21,63,126 --regimes-csv data/us/macro_regimes.csv --join-cycles-into-reactions
-
       - name: Additional windows (±5/±10/±21)
         run: |
           python scripts/compute_additional_windows.py --market us --data-dir data/us --out-dir out/us --windows 5,10,21
-
       - name: Macro impact + quantile + partial + focus
         run: |
           python scripts/compute_macro_impact.py --market us --out-dir out/us
           python scripts/compute_reaction_by_surprise_quantile.py --market us --out-dir out/us --last-days 180 --last-events 100
           python scripts/compute_partial_impact.py --market us --out-dir out/us --by-regime
           python scripts/analyze_focus_events.py --market us --out-dir out/us --last-days 180 --last-events 100 --regime-current
-
       - name: Build dashboard (advanced)
         run: |
           python scripts/build_excel_dashboard_plus.py --market us --data-dir data/us --out-dir out/us --last-days 365 --last-events 180 --dashboard-path dashboards/us_dashboard.xlsx
-
       - name: Upload dashboards
         uses: actions/upload-artifact@v4
         with:
@@ -90,7 +76,6 @@ jobs:
           path: dashboards/us_dashboard.xlsx
           if-no-files-found: ignore
           retention-days: 14
-
       - name: Upload outputs (CSV + logs)
         uses: actions/upload-artifact@v4
         with:
@@ -111,48 +96,43 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install dependencies
         run: |
           pip install -q pandas numpy xlsxwriter finance-datareader
-
       - name: Prepare folders
         run: |
           mkdir -p out/kr/logs dashboards
-
-      - name: KR availability check
-        id: chk
+      - name: Seed KR macro events (36m)
         run: |
-          if [ -f data/kr/macro_events.csv ] && [ -f data/kr/prices.csv ]; then echo "ok=1" >> $GITHUB_OUTPUT; else echo "ok=0" >> $GITHUB_OUTPUT; fi
-
+          python scripts/seed_events_from_links.py --data-dir data/kr --months 36
+      - name: Fetch KR prices (FDR)
+        run: |
+          python scripts/fetch_prices_fdr.py --data-dir data/kr --start 2000-01-01
+      - name: Fetch KR macro actuals (BOK/KOSIS)
+        run: |
+          python scripts/fetch_macro_from_bok_kosis.py --data-dir data/kr || true
+      - name: Merge KR macro actuals
+        run: |
+          python scripts/merge_macro_actuals.py --data-dir data/kr --backup
       - name: Build reaction matrices (KR)
-        if: ${{ steps.chk.outputs.ok == '1' }}
         run: |
           python scripts/build_reaction_matrix.py --market kr --data-dir data/kr --out-dir out/kr --sector-benchmark-csv data/kr/sector_benchmarks.csv --write-wide --win1 1 --win3 3 --compute-cycles --cycle-windows 21,63,126 --regimes-csv data/kr/macro_regimes.csv --join-cycles-into-reactions
-
       - name: Additional windows (KR)
-        if: ${{ steps.chk.outputs.ok == '1' }}
         run: |
           python scripts/compute_additional_windows.py --market kr --data-dir data/kr --out-dir out/kr --windows 5,10,21
-
       - name: Macro impact + quantile + partial + focus (KR)
-        if: ${{ steps.chk.outputs.ok == '1' }}
         run: |
           python scripts/compute_macro_impact.py --market kr --out-dir out/kr || true
           python scripts/compute_reaction_by_surprise_quantile.py --market kr --out-dir out/kr --last-days 180 --last-events 100 || true
           python scripts/compute_partial_impact.py --market kr --out-dir out/kr --by-regime || true
           python scripts/analyze_focus_events.py --market kr --out-dir out/kr --last-days 180 --last-events 100 --regime-current || true
-
       - name: Build dashboard (advanced KR)
-        if: ${{ steps.chk.outputs.ok == '1' }}
         run: |
           python scripts/build_excel_dashboard_plus.py --market kr --data-dir data/kr --out-dir out/kr --last-days 365 --last-events 180 --dashboard-path dashboards/kr_dashboard.xlsx
-
       - name: Upload dashboards (KR)
         uses: actions/upload-artifact@v4
         with:
@@ -160,7 +140,6 @@ jobs:
           path: dashboards/kr_dashboard.xlsx
           if-no-files-found: ignore
           retention-days: 14
-
       - name: Upload outputs (KR)
         uses: actions/upload-artifact@v4
         with:
