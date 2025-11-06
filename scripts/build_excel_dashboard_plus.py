@@ -142,6 +142,7 @@ def write_overview(writer, out_dir):
 def write_heatmap_sheet(writer, name, df, is_pct=True):
     if df is None or df.empty:
         return
+    # sanitize sheet name via writer patch (see main)
     df.to_excel(writer, sheet_name=name, index=False)
     ws = writer.sheets[name]
     nrows, ncols = df.shape
@@ -185,6 +186,33 @@ def main():
 
     # Build workbook
     with pd.ExcelWriter(dashboard_path, engine='xlsxwriter') as writer:
+        # --- Patch add_worksheet to sanitize sheet names globally ---
+        created = set()
+        orig_add = writer.book.add_worksheet
+        invalid = set('[]:*?/\\')
+
+        def _sanitize(name: str) -> str:
+            if not name:
+                return name
+            s = ''.join(('-' if ch in invalid else ch) for ch in name)
+            if len(s) > 31:
+                s = s[:31]
+            base = s
+            i = 1
+            while s in created:
+                suff = f" ({i+1})"
+                s = (base[: max(0, 31 - len(suff))] + suff)
+                i += 1
+            created.add(s)
+            return s
+
+        def _patched_add_worksheet(name=None):
+            sname = _sanitize(name) if name is not None else name
+            return orig_add(sname)
+
+        writer.book.add_worksheet = _patched_add_worksheet
+        # -------------------------------------------------------------
+
         # Meta sheets
         write_parameters_sheet(writer, args.market, args.last_days, args.last_events)
         write_controls_sheet(writer)
@@ -201,9 +229,9 @@ def main():
         write_heatmap_sheet(writer, 'Reactions (t0)', t0_pv, True)
         write_heatmap_sheet(writer, 'Reactions (±1)', w1_pv, True)
         write_heatmap_sheet(writer, 'Reactions (±3)', w3_pv, True)
-        write_heatmap_sheet(writer, 'Reactions (±5)', w5_pv, True)
-        write_heatmap_sheet(writer, 'Reactions (±10)', w10_pv, True)
-        write_heatmap_sheet(writer, 'Reactions (±21)', w21_pv, True)
+        write_heatmap_sheet(writer, 'Reactions (+/-5)', w5_pv, True)
+        write_heatmap_sheet(writer, 'Reactions (+/-10)', w10_pv, True)
+        write_heatmap_sheet(writer, 'Reactions (+/-21)', w21_pv, True)
 
         # Macro impact (heatmap by metric)
         if imp is not None and not imp.empty:
