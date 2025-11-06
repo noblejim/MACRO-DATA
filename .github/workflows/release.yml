@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   publish:
@@ -39,17 +40,15 @@ jobs:
         uses: dawidd6/action-download-artifact@v3
         with:
           run_id: ${{ steps.src.outputs.run_id }}
-          name: "*"
           path: artifacts
 
       - name: Download artifacts from latest successful nightly
         if: ${{ steps.src.outputs.mode == 'latest_success' }}
         uses: dawidd6/action-download-artifact@v3
         with:
-          workflow: nightly
+          workflow: .github/workflows/nightly.yml
           workflow_conclusion: success
           branch: main
-          name: "*"
           path: artifacts
 
       - name: List artifacts
