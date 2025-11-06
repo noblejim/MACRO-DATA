@@ -198,8 +198,7 @@ def main():
 
     api_key = os.environ.get('FMP_API_KEY')
     if not api_key:
-        print('Missing FMP_API_KEY; aborting price fetch.')
-        sys.exit(1)
+        print('Missing FMP_API_KEY; will try FinanceDataReader fallback...')
 
     # assemble symbols
     symbols = []
@@ -230,11 +229,11 @@ def main():
     existing = read_existing_prices(prices_csv)
     total = existing.copy()
     fetched_rows = 0
+    # First: try FMP
     for sym in symbols:
         sym_total = 0
         try:
-            if args.slice_years and args.start:
-                # iterate year by year
+            if api_key and args.slice_years and args.start:
                 syear = int(args.start[:4])
                 eyear = int((args.end[:4] if args.end else datetime.now().strftime('%Y')))
                 for y in range(syear, eyear + 1):
@@ -244,19 +243,51 @@ def main():
                         continue
                     total = merge_prices(total, df)
                     cnt = len(df); sym_total += cnt; fetched_rows += cnt
-                    print(f"Fetched {cnt} rows for {sym} [{ys}..{ye}]")
+                    print(f"FMP: {sym} [{ys}..{ye}] rows={cnt}")
                     time.sleep(0.4)
             else:
-                df = fmp_historical(sym, api_key, args.start, args.end, data_dir=data_dir, refresh=args.refresh)
+                df = fmp_historical(sym, api_key, args.start, args.end, data_dir=data_dir, refresh=args.refresh) if api_key else pd.DataFrame()
                 if df is not None and not df.empty:
                     total = merge_prices(total, df)
                     cnt = len(df); sym_total += cnt; fetched_rows += cnt
-                    print(f"Fetched {cnt} rows for {sym}")
-                    time.sleep(0.4)
+                    print(f"FMP: {sym} rows={cnt}")
+                    time.sleep(0.2)
         except Exception as e:
-            fail_rows.append({'symbol': sym, 'error': str(e)})
+            fail_rows.append({'symbol': sym, 'error': f'FMP:{str(e)}'})
         finally:
             log_rows.append({'symbol': sym, 'rows_fetched': sym_total})
+
+    # Fallback: FinanceDataReader if no rows fetched
+    if fetched_rows == 0:
+        print('FMP returned 0 rows for all symbols; trying FinanceDataReader fallback...')
+        try:
+            import FinanceDataReader as fdr
+        except Exception:
+            fdr = None
+        if fdr is not None:
+            fb_rows = 0
+            for sym in symbols:
+                try:
+                    df = fdr.DataReader(sym, args.start, args.end)
+                    if df is None or df.empty:
+                        continue
+                    out = df[['Close']].rename(columns={'Close':'adj_close'}).copy()
+                    out['ticker'] = sym
+                    out['date'] = out.index
+                    out = out[['date','ticker','adj_close']]
+                    out['date'] = pd.to_datetime(out['date'], errors='coerce')
+                    out['adj_close'] = pd.to_numeric(out['adj_close'], errors='coerce')
+                    out = out.dropna(subset=['date','adj_close'])
+                    if not out.empty:
+                        total = merge_prices(total, out)
+                        fb_rows += len(out)
+                        print(f"FDR: {sym} rows={len(out)}")
+                        time.sleep(0.1)
+                except Exception as e:
+                    fail_rows.append({'symbol': sym, 'error': f'FDR:{str(e)}'})
+            fetched_rows = fb_rows
+            if fetched_rows > 0:
+                print(f'FinanceDataReader fallback fetched total rows={fetched_rows}')
 
     # write logs
     try:
@@ -266,10 +297,12 @@ def main():
             pd.DataFrame(fail_rows).to_csv(os.path.join(logs_dir, 'fmp_failed_symbols.csv'), index=False)
     except Exception:
         pass
-    if fetched_rows == 0:
-        print('No new rows fetched')
-        return
 
+    if (fetched_rows == 0) and (total is None or total.empty):
+        print('No price data fetched from FMP or fallback; creating no prices.csv. Downstream steps may skip.')
+        sys.exit(0)
+
+    # Always write prices.csv if we have any data (from cache or fresh)
     total = total.sort_values(['date','ticker'])
     total['date'] = total['date'].dt.strftime('%Y-%m-%d')
     total.to_csv(prices_csv, index=False)
