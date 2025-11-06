@@ -1,5 +1,9 @@
 # MACRO-DATA
 
+[![nightly](https://github.com/noblejim/MACRO-DATA/actions/workflows/nightly.yml/badge.svg?branch=main)](https://github.com/noblejim/MACRO-DATA/actions/workflows/nightly.yml)
+[![release](https://github.com/noblejim/MACRO-DATA/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/noblejim/MACRO-DATA/actions/workflows/release.yml)
+[![Latest Release](https://img.shields.io/github/v/release/noblejim/MACRO-DATA?display_name=tag)](https://github.com/noblejim/MACRO-DATA/releases)
+
 미국/한국 거시경제 데이터 파이프라인과 대시보드 자동화 저장소입니다. 매일 정해진 시간(02:00 KST)에 원천 데이터 수집 → 반응/임팩트 분석 → Excel 대시보드 산출까지 자동으로 수행하고, 성공 시 Release 아티팩트로 게시합니다.
 
 ## 특징
