@@ -69,6 +69,9 @@ jobs:
           python scripts/compute_reaction_by_surprise_quantile.py --market us --out-dir out/us --last-days 180 --last-events 100
           python scripts/compute_partial_impact.py --market us --out-dir out/us --by-regime
           python scripts/analyze_focus_events.py --market us --out-dir out/us --last-days 180 --last-events 100 --regime-current
+      - name: Validate US outputs (non-strict)
+        run: |
+          python scripts/validate_us_data.py --out-dir out/us || true
       - name: Build dashboard (advanced)
         run: |
           python scripts/build_excel_dashboard_plus.py --market us --data-dir data/us --out-dir out/us --last-days 365 --last-events 180 --dashboard-path dashboards/us_dashboard.xlsx
