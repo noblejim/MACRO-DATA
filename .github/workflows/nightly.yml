@@ -9,19 +9,91 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
 jobs:
-  smoke:
+  build-us:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 75
+    env:
+      FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      TZ: Asia/Seoul
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Verify environment
+
+      - name: Install dependencies
         run: |
-          python -V
-          pip -V
-          echo "Repo ready. Add secrets (FMP_API_KEY, FRED_API_KEY, optional BOK_API_KEY/KOSIS_API_KEY) and pipeline files in follow-up PR."
+          pip install -q pandas numpy xlsxwriter finance-datareader
+
+      - name: Restore caches (US)
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/us/.cache_fred
+            data/us/.cache_fmp
+          key: cache-us-${{ runner.os }}-${{ hashFiles('scripts/**/*.py','data/us/macro_sources.csv') }}
+          restore-keys: |
+            cache-us-${{ runner.os }}-
+
+      - name: Prepare folders
+        run: |
+          mkdir -p out/us/logs dashboards
+
+      - name: Seed/Backfill events (FRED)
+        run: |
+          python scripts/backfill_events_from_fred.py --data-dir data/us --all-fred --start 2000-01-01 --fred-key "$FRED_API_KEY" || true
+
+      - name: Fetch prices (FMP)
+        run: |
+          python scripts/fetch_prices_fmp.py --data-dir data/us --start 2000-01-01 --slice-years
+
+      - name: Fill US macro actuals (FRED)
+        run: |
+          python scripts/fetch_macro_from_fred.py --data-dir data/us --fred-key "$FRED_API_KEY"
+
+      - name: Merge macro actuals
+        run: |
+          python scripts/merge_macro_actuals.py --data-dir data/us --backup
+
+      - name: Build reaction matrices
+        run: |
+          python scripts/build_reaction_matrix.py --market us --data-dir data/us --out-dir out/us --sector-benchmark-csv data/us/sector_benchmarks.csv --write-wide --win1 1 --win3 3 --compute-cycles --cycle-windows 21,63,126 --regimes-csv data/us/macro_regimes.csv --join-cycles-into-reactions
+
+      - name: Additional windows (±5/±10/±21)
+        run: |
+          python scripts/compute_additional_windows.py --market us --data-dir data/us --out-dir out/us --windows 5,10,21
+
+      - name: Macro impact + quantile + partial + focus
+        run: |
+          python scripts/compute_macro_impact.py --market us --out-dir out/us
+          python scripts/compute_reaction_by_surprise_quantile.py --market us --out-dir out/us --last-days 180 --last-events 100
+          python scripts/compute_partial_impact.py --market us --out-dir out/us --by-regime
+          python scripts/analyze_focus_events.py --market us --out-dir out/us --last-days 180 --last-events 100 --regime-current
+
+      - name: Build dashboard (basic)
+        run: |
+          python scripts/build_excel_dashboard.py --market us --out-dir out/us --dashboard-path dashboards/us_dashboard.xlsx
+
+      - name: Upload dashboards
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboards
+          path: dashboards/us_dashboard.xlsx
+          retention-days: 14
+
+      - name: Upload outputs (CSV + logs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: outputs
+          path: |
+            out/us/**
+          retention-days: 14
