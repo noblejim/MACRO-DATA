@@ -29,7 +29,7 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: |
-          pip install -q pandas numpy xlsxwriter finance-datareader
+          pip install -q pandas numpy xlsxwriter finance-datareader openpyxl
       - name: Restore caches (US)
         uses: actions/cache@v4
         with:
@@ -72,6 +72,9 @@ jobs:
       - name: Build dashboard (advanced)
         run: |
           python scripts/build_excel_dashboard_plus.py --market us --data-dir data/us --out-dir out/us --last-days 365 --last-events 180 --dashboard-path dashboards/us_dashboard.xlsx
+      - name: Add Overview hyperlinks (US)
+        run: |
+          python scripts/postprocess_add_overview_links.py --dashboard-path dashboards/us_dashboard.xlsx
       - name: Upload dashboards
         uses: actions/upload-artifact@v4
         with:
@@ -105,7 +108,7 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: |
-          pip install -q pandas numpy xlsxwriter finance-datareader
+          pip install -q pandas numpy xlsxwriter finance-datareader openpyxl
       - name: Prepare folders
         run: |
           mkdir -p out/kr/logs dashboards
@@ -139,6 +142,9 @@ jobs:
       - name: Build dashboard (advanced KR)
         run: |
           python scripts/build_excel_dashboard_plus.py --market kr --data-dir data/kr --out-dir out/kr --last-days 365 --last-events 180 --dashboard-path dashboards/kr_dashboard.xlsx
+      - name: Add Overview hyperlinks (KR)
+        run: |
+          python scripts/postprocess_add_overview_links.py --dashboard-path dashboards/kr_dashboard.xlsx
       - name: Upload dashboards (KR)
         uses: actions/upload-artifact@v4
         with:
