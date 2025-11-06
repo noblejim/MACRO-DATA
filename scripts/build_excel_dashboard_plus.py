@@ -13,7 +13,7 @@ def read_csv_safe(path, dtype=None):
     if not os.path.exists(path):
         return None
     try:
-        return pd.read_csv(path, dtype=dtype, encoding='utf-8-sig', engine='python', on_bad_lines='skip')
+            return pd.read_csv(path, dtype=dtype, encoding='utf-8-sig', engine='python', on_bad_lines='skip')
     except Exception:
         try:
             return pd.read_csv(path, dtype=dtype)
@@ -58,6 +58,23 @@ def add_colorscale(workbook, worksheet, first_row, first_col, last_row, last_col
         worksheet.set_column(first_col, last_col, 12, pct)
     else:
         worksheet.set_column(first_col, last_col, 12)
+
+
+# ------- worksheet fetch helper -------
+
+def get_ws(writer, name: str):
+    ws = writer.sheets.get(name)
+    if ws is not None:
+        return ws
+    # fallback to last created worksheet
+    try:
+        wss = writer.book.worksheets()
+        if wss:
+            return wss[-1]
+    except Exception:
+        pass
+    # as a last resort create a generic sheet
+    return writer.book.add_worksheet('Sheet')
 
 
 # ------- workbook builders -------
@@ -142,9 +159,8 @@ def write_overview(writer, out_dir):
 def write_heatmap_sheet(writer, name, df, is_pct=True):
     if df is None or df.empty:
         return
-    # sanitize sheet name via writer patch (see main)
     df.to_excel(writer, sheet_name=name, index=False)
-    ws = writer.sheets[name]
+    ws = get_ws(writer, name)
     nrows, ncols = df.shape
     add_colorscale(writer.book, ws, 1, 2, nrows, ncols - 1, reverse=False, is_percentage=is_pct, palette='orange')
     ws.freeze_panes(1, 2)
@@ -242,7 +258,7 @@ def main():
                 pv = sub.pivot_table(index='event_type', columns='sector', values='t_stat', aggfunc='mean').reset_index()
                 sheet = f'Macro Impact ({m})'
                 pv.to_excel(writer, sheet_name=sheet, index=False)
-                ws = writer.sheets[sheet]
+                ws = get_ws(writer, sheet)
                 r, c = pv.shape
                 add_colorscale(writer.book, ws, 1, 1, r, c - 1, reverse=False, is_percentage=False, palette='orange')
                 ws.freeze_panes(1, 1)
@@ -252,7 +268,7 @@ def main():
             rq.to_excel(writer, sheet_name='By Surprise Quantile (raw)', index=False)
             rq_t0 = rq.pivot_table(index=['event_type','quantile'], columns='sector', values='t0_return_avg', aggfunc='mean').reset_index()
             rq_t0.to_excel(writer, sheet_name='By Surprise Quantile (t0)', index=False)
-            wsq = writer.sheets['By Surprise Quantile (t0)']
+            wsq = get_ws(writer, 'By Surprise Quantile (t0)')
             r, c = rq_t0.shape
             add_colorscale(writer.book, wsq, 1, 2, r, c - 1, reverse=False, is_percentage=True, palette='orange')
             wsq.freeze_panes(1, 2)
@@ -261,7 +277,7 @@ def main():
         if pimp is not None and not pimp.empty:
             pv = pimp.pivot_table(index='event_type', columns='sector', values='beta_partial', aggfunc='mean').reset_index()
             pv.to_excel(writer, sheet_name='Partial Impact (t0|rank)', index=False)
-            ws = writer.sheets['Partial Impact (t0|rank)']
+            ws = get_ws(writer, 'Partial Impact (t0|rank)')
             r, c = pv.shape
             add_colorscale(writer.book, ws, 1, 1, r, c - 1, reverse=False, is_percentage=False, palette='orange')
             ws.freeze_panes(1, 1)
@@ -279,7 +295,7 @@ def main():
                 pv = sub.pivot_table(index=['focus','rank_type'], columns='sector', values='value', aggfunc='mean').reset_index()
                 sheet = f'Focus Top/Bottom ({m})'
                 pv.to_excel(writer, sheet_name=sheet, index=False)
-                ws = writer.sheets[sheet]
+                ws = get_ws(writer, sheet)
                 r, c = pv.shape
                 add_colorscale(writer.book, ws, 1, 2, r, c - 1, reverse=False, is_percentage=True, palette='orange')
                 ws.freeze_panes(1, 2)
@@ -291,7 +307,7 @@ def main():
                 pv = fquant.pivot_table(index=['focus','quantile'], columns='sector', values='t0_return_avg', aggfunc='mean').reset_index()
                 sheet = 'Focus Quantile (t0)'
                 pv.to_excel(writer, sheet_name=sheet, index=False)
-                ws = writer.sheets[sheet]
+                ws = get_ws(writer, sheet)
                 r, c = pv.shape
                 add_colorscale(writer.book, ws, 1, 2, r, c - 1, reverse=False, is_percentage=True, palette='orange')
                 ws.freeze_panes(1, 2)
@@ -303,7 +319,7 @@ def main():
             pv = fquant_reg.pivot_table(index=['focus','quantile'], columns='sector', values='t0_return_avg', aggfunc='mean').reset_index()
             sheet = 'Focus Quantile (Regime t0)'
             pv.to_excel(writer, sheet_name=sheet, index=False)
-            ws = writer.sheets[sheet]
+            ws = get_ws(writer, sheet)
             r, c = pv.shape
             add_colorscale(writer.book, ws, 1, 2, r, c - 1, reverse=False, is_percentage=True, palette='orange')
             ws.freeze_panes(1, 2)
