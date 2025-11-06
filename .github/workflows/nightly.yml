@@ -45,7 +45,7 @@ jobs:
       - name: Seed/Backfill events (FRED)
         run: |
           python scripts/backfill_events_from_fred.py --data-dir data/us --all-fred --start 2000-01-01 --fred-key "$FRED_API_KEY" || true
-      - name: Fetch prices (FMP)
+      - name: Fetch prices (FMP with FDR fallback)
         run: |
           python scripts/fetch_prices_fmp.py --data-dir data/us --start 2000-01-01 --slice-years
       - name: Fill US macro actuals (FRED)
@@ -56,7 +56,10 @@ jobs:
           python scripts/merge_macro_actuals.py --data-dir data/us --backup
       - name: Build reaction matrices
         run: |
-          python scripts/build_reaction_matrix.py --market us --data-dir data/us --out-dir out/us --sector-benchmark-csv data/us/sector_benchmarks.csv --write-wide --win1 1 --win3 3 --compute-cycles --cycle-windows 21,63,126 --regimes-csv data/us/macro_regimes.csv --join-cycles-into-reactions
+          python scripts/build_reaction_matrix.py --market us --data-dir data/us --out-dir out/us --sector-benchmark-csv data/us/sector_benchmarks.csv --write-wide --win1 1 --win3 3 --compute-cycles --cycle-windows 21,63,126 --regimes-csv data/us/macro_regimes.csv
+      - name: Join cycles into reaction_with_cycle (US)
+        run: |
+          python scripts/join_cycles_into_reactions.py --market us --out-dir out/us --windows 21,63,126
       - name: Additional windows (±5/±10/±21)
         run: |
           python scripts/compute_additional_windows.py --market us --data-dir data/us --out-dir out/us --windows 5,10,21
@@ -120,7 +123,10 @@ jobs:
           python scripts/merge_macro_actuals.py --data-dir data/kr --backup
       - name: Build reaction matrices (KR)
         run: |
-          python scripts/build_reaction_matrix.py --market kr --data-dir data/kr --out-dir out/kr --sector-benchmark-csv data/kr/sector_benchmarks.csv --write-wide --win1 1 --win3 3 --compute-cycles --cycle-windows 21,63,126 --regimes-csv data/kr/macro_regimes.csv --join-cycles-into-reactions
+          python scripts/build_reaction_matrix.py --market kr --data-dir data/kr --out-dir out/kr --sector-benchmark-csv data/kr/sector_benchmarks.csv --write-wide --win1 1 --win3 3 --compute-cycles --cycle-windows 21,63,126 --regimes-csv data/kr/macro_regimes.csv
+      - name: Join cycles into reaction_with_cycle (KR)
+        run: |
+          python scripts/join_cycles_into_reactions.py --market kr --out-dir out/kr --windows 21,63,126
       - name: Additional windows (KR)
         run: |
           python scripts/compute_additional_windows.py --market kr --data-dir data/kr --out-dir out/kr --windows 5,10,21
