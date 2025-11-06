@@ -1,0 +1,16 @@
+event_type,source,notes,endpoint,params,stat_code,stat_name,cycle,org_id,tbl_id,itm_id,prd_se,param_mode,objL1,objL2,objL3,objL4,objL5,objL6,objL7,objL8,custom_url,use_prev_quarter,compute_yoy
+CPI_YOY,BOK,CPI YoY,,,902Y014,M,,,,,,,,,,,,
+PPI_YOY,BOK,PPI YoY,,,901Y017,M,,,,,,,,,,,,
+GDP_QOQ,KOSIS,GDP QoQ,Param,,,,301,DT_200Y102,13103136269999,Q,Y,ALL,,,,,,,,,Y,
+UNEMP_RATE,KOSIS,Unemployment Rate,Param,,,,101,DT_1DA7102S,T80,M,Y,0,00,,,,,,, , ,
+TRADE_BAL,KOSIS,Trade Balance,Param,,,,301,DT_301Y017,13103134664999,M,Y,13102134664ACC_CD.SA000,,,,,,,, , ,
+POLICY_RATE,BOK,Policy Rate,,,722Y001,M,,,,,,,,,,,,
+M2_YOY,BOK,M2 YoY,,,103Y034,M,,,,,,,,,,,,
+USDKRW,Market,USD/KRW,,,,,,,,,,,,,,,,,,,
+EQUITY_INDEX,Market,KOSPI,,,,,,,,,,,,,,,,,,,
+LEI,KOSIS,Leading Economic Index,Param,,,,101,DT_1C8015,T1,M,Y,A00,,,,,,,, , ,
+EMPLOYMENT,KOSIS,Employment Level,Param,,,,101,DT_1DA7024S,T30,M,Y,0,00,,,,,,, , ,
+CCSI,KOSIS,Consumer Confidence Index,Param,,,,101,DT_1DA7001S,T10,M,Y,0,,,,,,,, , ,
+INFL_EXPECT,KOSIS,Inflation Expectations,Param,,,,101,INH_1DA7030S,T30,M,Y,00,0,,,,,,, , ,
+IP_YOY,KOSIS,Industrial Production YoY (level→YoY),Param,,,,101,DT_1F02001,T10,M,Y,00,0,,,,,,, , ,Y
+PMI_MFG,KOSIS,Manufacturing BSI SA (composite),Param,,,,301,DT_512Y007,13103134491999,M,Y,13102134491BSI_CD.AA,13102134491BUSINESS_TYPE_CD.99988,,,,,,, , ,
