@@ -79,21 +79,93 @@ jobs:
           python scripts/compute_partial_impact.py --market us --out-dir out/us --by-regime
           python scripts/analyze_focus_events.py --market us --out-dir out/us --last-days 180 --last-events 100 --regime-current
 
-      - name: Build dashboard (basic)
+      - name: Build dashboard (advanced)
         run: |
-          python scripts/build_excel_dashboard.py --market us --out-dir out/us --dashboard-path dashboards/us_dashboard.xlsx
+          python scripts/build_excel_dashboard_plus.py --market us --data-dir data/us --out-dir out/us --last-days 365 --last-events 180 --dashboard-path dashboards/us_dashboard.xlsx
 
       - name: Upload dashboards
         uses: actions/upload-artifact@v4
         with:
           name: dashboards
           path: dashboards/us_dashboard.xlsx
+          if-no-files-found: ignore
           retention-days: 14
 
       - name: Upload outputs (CSV + logs)
         uses: actions/upload-artifact@v4
         with:
-          name: outputs
+          name: outputs-us
           path: |
             out/us/**
+          if-no-files-found: ignore
+          retention-days: 14
+
+  build-kr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: build-us
+    env:
+      BOK_API_KEY:  ${{ secrets.BOK_API_KEY }}
+      KOSIS_API_KEY: ${{ secrets.KOSIS_API_KEY }}
+      TZ: Asia/Seoul
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -q pandas numpy xlsxwriter finance-datareader
+
+      - name: Prepare folders
+        run: |
+          mkdir -p out/kr/logs dashboards
+
+      - name: KR availability check
+        id: chk
+        run: |
+          if [ -f data/kr/macro_events.csv ] && [ -f data/kr/prices.csv ]; then echo "ok=1" >> $GITHUB_OUTPUT; else echo "ok=0" >> $GITHUB_OUTPUT; fi
+
+      - name: Build reaction matrices (KR)
+        if: ${{ steps.chk.outputs.ok == '1' }}
+        run: |
+          python scripts/build_reaction_matrix.py --market kr --data-dir data/kr --out-dir out/kr --sector-benchmark-csv data/kr/sector_benchmarks.csv --write-wide --win1 1 --win3 3 --compute-cycles --cycle-windows 21,63,126 --regimes-csv data/kr/macro_regimes.csv --join-cycles-into-reactions
+
+      - name: Additional windows (KR)
+        if: ${{ steps.chk.outputs.ok == '1' }}
+        run: |
+          python scripts/compute_additional_windows.py --market kr --data-dir data/kr --out-dir out/kr --windows 5,10,21
+
+      - name: Macro impact + quantile + partial + focus (KR)
+        if: ${{ steps.chk.outputs.ok == '1' }}
+        run: |
+          python scripts/compute_macro_impact.py --market kr --out-dir out/kr || true
+          python scripts/compute_reaction_by_surprise_quantile.py --market kr --out-dir out/kr --last-days 180 --last-events 100 || true
+          python scripts/compute_partial_impact.py --market kr --out-dir out/kr --by-regime || true
+          python scripts/analyze_focus_events.py --market kr --out-dir out/kr --last-days 180 --last-events 100 --regime-current || true
+
+      - name: Build dashboard (advanced KR)
+        if: ${{ steps.chk.outputs.ok == '1' }}
+        run: |
+          python scripts/build_excel_dashboard_plus.py --market kr --data-dir data/kr --out-dir out/kr --last-days 365 --last-events 180 --dashboard-path dashboards/kr_dashboard.xlsx
+
+      - name: Upload dashboards (KR)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboards-kr
+          path: dashboards/kr_dashboard.xlsx
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload outputs (KR)
+        uses: actions/upload-artifact@v4
+        with:
+          name: outputs-kr
+          path: |
+            out/kr/**
+          if-no-files-found: ignore
           retention-days: 14
