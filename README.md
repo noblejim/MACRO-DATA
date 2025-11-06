@@ -2,7 +2,7 @@
 
 [![nightly](https://github.com/noblejim/MACRO-DATA/actions/workflows/nightly.yml/badge.svg?branch=main)](https://github.com/noblejim/MACRO-DATA/actions/workflows/nightly.yml)
 [![release](https://github.com/noblejim/MACRO-DATA/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/noblejim/MACRO-DATA/actions/workflows/release.yml)
-[![Latest Release](https://img.shields.io/github/v/release/noblejim/MACRO-DATA?display_name=tag)](https://github.com/noblejim/MACRO-DATA/releases)
+[![Latest Release](https://img.shields.io/github/v/release/noblejim/MACRO-DATA?include_prereleases&sort=semver&display_name=tag)](https://github.com/noblejim/MACRO-DATA/releases)
 
 미국/한국 거시경제 데이터 파이프라인과 대시보드 자동화 저장소입니다. 매일 정해진 시간(02:00 KST)에 원천 데이터 수집 → 반응/임팩트 분석 → Excel 대시보드 산출까지 자동으로 수행하고, 성공 시 Release 아티팩트로 게시합니다.
 
@@ -90,7 +90,7 @@ python scripts/build_excel_dashboard_plus.py --market kr --data-dir data/kr --ou
 - Release 다운로드 404: 최근 성공한 nightly 런이 없을 때 발생 → nightly를 먼저 실행/성공
 - `data/us/prices.csv` 누락: 가격 수집 미실행 → `fetch_prices_fmp.py` 먼저 실행
 - Excel 시트명 오류(금지문자/길이): 코드에서 시트명 자동 정규화 적용됨 (문제 발생 시 최신 main 반영)
-- `writer.sheets['Reactions (+/-5)']` KeyError: 정규화된 시트명 사용으로 해결됨 (자동 매핑 적용)
+- `writer.sheets['Reactions (+/-5)']` KeyError: 정규화된 이름 사용으로 해결됨 (자동 매핑 적용)
 - FMP 레이트리밋/빈 결과: 재시도/백오프, FDR 대체 경로 적용 (환경에 따라 차이 가능)
 - KR BOK/KOSIS 주기/파라미터: `data/kr/macro_sources.csv` 주기(M/Q)와 KOSIS 파라미터 확인 필요
 
