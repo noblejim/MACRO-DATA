@@ -1,0 +1,38 @@
+핵심 12 지표(한국, 권장 세트)
+
+물가
+CPI_YOY: 소비자물가상승률(전년동월대비) [BOK]
+https://ecos.bok.or.kr/#/Short/fb7535
+PPI_YOY: 생산자물가지수(전년동월대비) [BOK]
+https://ecos.bok.or.kr/#/Short/d7581d
+
+성장/수출
+GDP_QOQ: 국내총생산 전기대비(분기, 키 보정 적용) [KOSIS]
+TRADE_BAL: 무역수지(월) [KOSIS, itm T001]
+
+제조/경기
+PMI_MFG: 제조업 PMI(월, 공급자 데이터) [Vendor] : 못찾음
+IP_YOY: 광공업/산업생산 전년동월대비(월) [KOSIS]
+https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=ZGJlZDM4NWU5M2Y0ODgzOGYwNDUyZTgwMGY4MjgyNTI=&itmId=T10+T11+T12+T20+T21+T22+&objL1=ALL&objL2=0+A+B+C+D+&objL3=&objL4=&objL5=&objL6=&objL7=&objL8=&format=json&jsonVD=Y&prdSe=M&startPrdDe=200001&endPrdDe=202509&orgId=101&tblId=DT_1F02001
+LEI: 선행지수(월) [OECD or 국내 대체]
+https://ecos.bok.or.kr/#/SearchStat
+
+고용/가계
+UNEMP_RATE: 실업률(월) [KOSIS]
+https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=ZGJlZDM4NWU5M2Y0ODgzOGYwNDUyZTgwMGY4MjgyNTI=&itmId=T10+T20+T30+T40+T50+T60+T80+T90+&objL1=ALL&objL2=&objL3=&objL4=&objL5=&objL6=&objL7=&objL8=&format=json&jsonVD=Y&prdSe=M&startPrdDe=200001&endPrdDe=202509&orgId=101&tblId=DT_1DA7001S
+EMPLOYMENT: 취업자수 증감(월) [KOSIS]
+https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=ZGJlZDM4NWU5M2Y0ODgzOGYwNDUyZTgwMGY4MjgyNTI=&itmId=T30+&objL1=ALL&objL2=ALL&objL3=&objL4=&objL5=&objL6=&objL7=&objL8=&format=json&jsonVD=Y&prdSe=M&startPrdDe=200001&endPrdDe=202509&orgId=101&tblId=INH_1DA7030S
+CCSI: 소비자심리지수(월) [BOK]
+https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=ZGJlZDM4NWU5M2Y0ODgzOGYwNDUyZTgwMGY4MjgyNTI=&itmId=13103134688999+&objL1=ALL&objL2=ALL&objL3=&objL4=&objL5=&objL6=&objL7=&objL8=&format=json&jsonVD=Y&prdSe=M&startPrdDe=200807&endPrdDe=202510&orgId=301&tblId=DT_511Y002
+
+금융/통화
+POLICY_RATE: 기준금리(월) [BOK]
+https://ecos.bok.or.kr/#/Short/78cc21
+M2_YOY: M2 통화공급 전년동월대비(월) [BOK]
+https://ecos.bok.or.kr/#/Short/b13a98
+
+보조(선택)
+USDKRW: 원/달러 환율 [Market/FDR]
+https://ecos.bok.or.kr/#/Short/c0f39f
+EQUITY_INDEX: KOSPI 지수 [Market/FDR]
+https://ecos.bok.or.kr/#/Short/06641f

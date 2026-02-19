@@ -1,0 +1,41 @@
+# 산출물 (재생성 가능)
+out/
+
+# 미래에셋 리포트 PDF (5GB+, GitHub 불가)
+reports/
+
+# Excel 대시보드 (바이너리, CI에서 재생성)
+dashboards/*.xlsx
+
+# FRED 캐시
+data/us/.cache_fred/
+
+# 백업
+data/_backups/
+
+# 가격 데이터 (대용량, 재수집 가능)
+data/us/prices.csv
+data/kr/prices.csv
+
+# 실제 수집된 매크로 데이터 (재수집 가능)
+data/us/macro_actuals.csv
+data/kr/macro_actuals.csv
+
+# 경제 리포트 한글 폴더
+경제\ 리포트/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+
+# API 키 파일 (절대 커밋 금지)
+docs/api_keys_template.txt
+*.key
+*.secret
+.env*
+
+# 기타
+*.log
+.DS_Store
